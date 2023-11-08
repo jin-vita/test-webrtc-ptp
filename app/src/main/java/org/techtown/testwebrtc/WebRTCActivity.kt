@@ -1,5 +1,6 @@
 package org.techtown.testwebrtc
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
@@ -26,6 +27,9 @@ class WebRTCActivity : AppCompatActivity(), SdpObserver, PeerConnection.Observer
     private val disposables = CompositeDisposable()
     private var localCapture: VideoCapturer? = null
     private var peerConnection: PeerConnection? = null
+
+    private lateinit var audioTrack: AudioTrack
+    private var isAudioMuted = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,7 +60,7 @@ class WebRTCActivity : AppCompatActivity(), SdpObserver, PeerConnection.Observer
             toggleAudioMute()
         }
         callEndButton.setOnClickListener {
-            finish()
+            backToActivity("callEndButton")
         }
     }
 
@@ -64,6 +68,7 @@ class WebRTCActivity : AppCompatActivity(), SdpObserver, PeerConnection.Observer
         disposables.dispose()
         binding.localView.release()
         binding.remoteView.release()
+        audioTrack.dispose()
         localCapture?.dispose()
         peerConnection?.dispose()
         super.onDestroy()
@@ -138,8 +143,9 @@ class WebRTCActivity : AppCompatActivity(), SdpObserver, PeerConnection.Observer
         remoteVideoTrack.addSink(binding.remoteView)
 
         val audioSource = peerConnectionFactory.createAudioSource(MediaConstraints())
-        val audioTrack = peerConnectionFactory.createAudioTrack("audio", audioSource)
+        audioTrack = peerConnectionFactory.createAudioTrack("audio", audioSource)
         peerConnection!!.addTrack(audioTrack, mediaStreamLabels)
+        audioTrack.setEnabled(false)
     }
 
     private fun setRemoteDescription(description: String) {
@@ -154,7 +160,7 @@ class WebRTCActivity : AppCompatActivity(), SdpObserver, PeerConnection.Observer
     private fun onError(error: Throwable) {
         error.printStackTrace()
         Toast.makeText(this, error.message.toString(), Toast.LENGTH_SHORT).show()
-        finish()
+        backToActivity(error.message.toString())
     }
 
     override fun onCreateSuccess(sessionDescription: SessionDescription) {
@@ -192,7 +198,7 @@ class WebRTCActivity : AppCompatActivity(), SdpObserver, PeerConnection.Observer
 
     override fun onIceConnectionChange(state: PeerConnection.IceConnectionState) {
         if (state == PeerConnection.IceConnectionState.DISCONNECTED) {
-            finish()
+            backToActivity("PeerConnection.IceConnectionState.DISCONNECTED")
         }
     }
 
@@ -226,7 +232,8 @@ class WebRTCActivity : AppCompatActivity(), SdpObserver, PeerConnection.Observer
                                 emitter.onNext(text)
                             }
                         }
-                    } catch (_: Exception) {
+                    } catch (e: Exception) {
+                        println("startSignalling... ${e.message}")
                     }
                 }
             }
@@ -281,26 +288,20 @@ class WebRTCActivity : AppCompatActivity(), SdpObserver, PeerConnection.Observer
         disposables.add(disposable)
     }
 
-    // 음소거 상태를 추적하기 위한 변수를 추가합니다.
-    private var isAudioMuted = true
-
-    // 오디오 트랙을 음소거/해제하는 함수를 생성합니다.
     private fun toggleAudioMute() {
-        isAudioMuted = !isAudioMuted
+        audioTrack.setEnabled(isAudioMuted)
         if (isAudioMuted) {
             binding.audioOnButton.setImageResource(R.drawable.ic_audio_on)
         } else {
             binding.audioOnButton.setImageResource(R.drawable.ic_audio_off)
         }
+        isAudioMuted = !isAudioMuted
+    }
 
-        // PeerConnection에서 오디오 트랙을 찾아서 상태를 업데이트합니다.
-        val audioTracks = peerConnection?.transceivers
-            ?.filter { it.sender.track() != null && it.sender.track() is AudioTrack }
-            ?.map { it.sender.track() as AudioTrack }
-
-        audioTracks?.forEach { audioTrack ->
-            // 오디오 트랙의 음소거를 설정합니다.
-            audioTrack.setEnabled(!isAudioMuted)
-        }
+    private fun backToActivity(reason: String) {
+        println("backToActivity called. reason: $reason")
+        val intent = Intent(this, PartnerDetectorActivity::class.java)
+        startActivity(intent)
+        finish()
     }
 }

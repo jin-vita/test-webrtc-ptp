@@ -2,6 +2,8 @@ package org.techtown.testwebrtc
 
 import android.content.Intent
 import android.os.Bundle
+import android.provider.Settings
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import io.reactivex.Completable
@@ -10,7 +12,9 @@ import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
+import okhttp3.*
 import org.techtown.testwebrtc.databinding.ActivitySignallingBinding
+import java.io.IOException
 import java.net.*
 import java.util.concurrent.TimeUnit
 
@@ -21,6 +25,46 @@ class PartnerDetectorActivity : AppCompatActivity() {
     private var broadcastListenerDisposable: Disposable? = null
     private var socketDisposable: Disposable? = null
     private var socketListenerDisposable: Disposable? = null
+
+    private fun checkNetwork(button: View) {
+        val client = OkHttpClient.Builder()
+            .connectTimeout(10, TimeUnit.SECONDS)
+            .readTimeout(10, TimeUnit.SECONDS)
+            .writeTimeout(10, TimeUnit.SECONDS)
+            .build()
+        val request = Request.Builder()
+            .url("https://www.google.com")
+            .build()
+        client.newCall(request).enqueue(object : Callback {
+            override fun onResponse(call: Call, response: Response) {
+                println("checkNetwork OK!")
+                when (button) {
+                    binding.phoneA -> {
+                        broadcast()
+                        socketListener()
+                    }
+
+                    binding.phoneB -> {
+                        broadcastListener()
+                    }
+
+                    else -> Toast.makeText(this@PartnerDetectorActivity, "???????", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onFailure(call: Call, e: IOException) {
+                println("checkNetwork Fail. ${e.message}")
+                runOnUiThread {
+                    Toast.makeText(this@PartnerDetectorActivity, e.message, Toast.LENGTH_SHORT).show()
+                    binding.phoneA.isEnabled = true
+                    binding.phoneB.isEnabled = true
+                    binding.message.text = "와이파이를 껐다 켜세요"
+                    val panelIntent = Intent(Settings.Panel.ACTION_WIFI)
+                    startActivity(panelIntent)
+                }
+            }
+        })
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,13 +78,12 @@ class PartnerDetectorActivity : AppCompatActivity() {
 
         binding.phoneA.setOnClickListener {
             onClick(binding.phoneB.text)
-            broadcast()
-            socketListener()
+            checkNetwork(it)
         }
 
         binding.phoneB.setOnClickListener {
             onClick(binding.phoneA.text)
-            broadcastListener()
+            checkNetwork(it)
         }
     }
 
@@ -136,7 +179,7 @@ class PartnerDetectorActivity : AppCompatActivity() {
                             emitter.onNext(socket.inetAddress.hostAddress!!)
                         }
                     } catch (e: Exception) {
-                        e.message
+                        println("socketListener... ${e.message}")
                     }
                 }
             }
@@ -149,13 +192,11 @@ class PartnerDetectorActivity : AppCompatActivity() {
     }
 
     private fun done(partnerIp: String, initiator: Boolean) {
-        finish()
-        val intent2 = Intent(this, PartnerDetectorActivity::class.java)
-        startActivity(intent2)
         val intent = Intent(this, WebRTCActivity::class.java)
         intent.putExtra("partnerIp", partnerIp)
         intent.putExtra("isInitiator", initiator)
         startActivity(intent)
+        finish()
     }
 
     private fun onError(error: Throwable) {
