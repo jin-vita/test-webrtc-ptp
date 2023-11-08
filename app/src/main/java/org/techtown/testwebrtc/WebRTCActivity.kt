@@ -28,7 +28,7 @@ class WebRTCActivity : AppCompatActivity(), SdpObserver, PeerConnection.Observer
     private var localCapture: VideoCapturer? = null
     private var peerConnection: PeerConnection? = null
 
-    private lateinit var audioTrack: AudioTrack
+    private var audioTrack: AudioTrack? = null
     private var isAudioMuted = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,7 +68,7 @@ class WebRTCActivity : AppCompatActivity(), SdpObserver, PeerConnection.Observer
         disposables.dispose()
         binding.localView.release()
         binding.remoteView.release()
-        audioTrack.dispose()
+        audioTrack?.dispose()
         localCapture?.dispose()
         peerConnection?.dispose()
         super.onDestroy()
@@ -145,7 +145,7 @@ class WebRTCActivity : AppCompatActivity(), SdpObserver, PeerConnection.Observer
         val audioSource = peerConnectionFactory.createAudioSource(MediaConstraints())
         audioTrack = peerConnectionFactory.createAudioTrack("audio", audioSource)
         peerConnection!!.addTrack(audioTrack, mediaStreamLabels)
-        audioTrack.setEnabled(false)
+        audioTrack?.setEnabled(false)
     }
 
     private fun setRemoteDescription(description: String) {
@@ -289,7 +289,7 @@ class WebRTCActivity : AppCompatActivity(), SdpObserver, PeerConnection.Observer
     }
 
     private fun toggleAudioMute() {
-        audioTrack.setEnabled(isAudioMuted)
+        audioTrack?.setEnabled(isAudioMuted)
         if (isAudioMuted) {
             binding.audioOnButton.setImageResource(R.drawable.ic_audio_on)
         } else {
