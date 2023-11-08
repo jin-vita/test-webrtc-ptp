@@ -136,7 +136,7 @@ class PartnerDetectorActivity : AppCompatActivity() {
                             emitter.onNext(socket.inetAddress.hostAddress!!)
                         }
                     } catch (e: Exception) {
-                        e.printStackTrace()
+                        e.message
                     }
                 }
             }
@@ -149,11 +149,13 @@ class PartnerDetectorActivity : AppCompatActivity() {
     }
 
     private fun done(partnerIp: String, initiator: Boolean) {
+        finish()
+        val intent2 = Intent(this, PartnerDetectorActivity::class.java)
+        startActivity(intent2)
         val intent = Intent(this, WebRTCActivity::class.java)
         intent.putExtra("partnerIp", partnerIp)
         intent.putExtra("isInitiator", initiator)
         startActivity(intent)
-        finish()
     }
 
     private fun onError(error: Throwable) {

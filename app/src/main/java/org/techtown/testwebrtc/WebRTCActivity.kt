@@ -1,6 +1,7 @@
 package org.techtown.testwebrtc
 
 import android.os.Bundle
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import io.reactivex.Completable
@@ -41,6 +42,22 @@ class WebRTCActivity : AppCompatActivity(), SdpObserver, PeerConnection.Observer
             startWebRTC()
             peerConnection?.createOffer(this, MediaConstraints())
         }
+
+        initButton()
+    }
+
+    private fun initButton() = with(binding) {
+        settingButton.setOnClickListener {
+            settingLayout.visibility = if (settingLayout.visibility == View.GONE) View.VISIBLE else View.GONE
+        }
+        videoOnButton.setOnClickListener {
+        }
+        audioOnButton.setOnClickListener {
+            toggleAudioMute()
+        }
+        callEndButton.setOnClickListener {
+            finish()
+        }
     }
 
     override fun onDestroy() {
@@ -57,7 +74,7 @@ class WebRTCActivity : AppCompatActivity(), SdpObserver, PeerConnection.Observer
         val cameraNames = camera1Enumerator.deviceNames
         var cameraName = cameraNames.singleOrNull { camera1Enumerator.isFrontFacing(it) }
         if (cameraName == null) {
-            cameraName = cameraNames.firstOrNull()
+            cameraName = cameraNames.lastOrNull()
 
             if (cameraName == null) {
                 onError(Throwable(getString(R.string.the_device_has_no_camera)))
@@ -262,5 +279,28 @@ class WebRTCActivity : AppCompatActivity(), SdpObserver, PeerConnection.Observer
 
         val disposable = action.subscribe({}, this::onError)
         disposables.add(disposable)
+    }
+
+    // 음소거 상태를 추적하기 위한 변수를 추가합니다.
+    private var isAudioMuted = true
+
+    // 오디오 트랙을 음소거/해제하는 함수를 생성합니다.
+    private fun toggleAudioMute() {
+        isAudioMuted = !isAudioMuted
+        if (isAudioMuted) {
+            binding.audioOnButton.setImageResource(R.drawable.ic_audio_on)
+        } else {
+            binding.audioOnButton.setImageResource(R.drawable.ic_audio_off)
+        }
+
+        // PeerConnection에서 오디오 트랙을 찾아서 상태를 업데이트합니다.
+        val audioTracks = peerConnection?.transceivers
+            ?.filter { it.sender.track() != null && it.sender.track() is AudioTrack }
+            ?.map { it.sender.track() as AudioTrack }
+
+        audioTracks?.forEach { audioTrack ->
+            // 오디오 트랙의 음소거를 설정합니다.
+            audioTrack.setEnabled(!isAudioMuted)
+        }
     }
 }

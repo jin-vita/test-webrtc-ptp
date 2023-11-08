@@ -21,6 +21,7 @@ class MainActivity : AppCompatActivity() {
         val recordAudio = ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
         if (camera == PackageManager.PERMISSION_GRANTED && recordAudio == PackageManager.PERMISSION_GRANTED) {
             startActivity(Intent(this, PartnerDetectorActivity::class.java))
+            finish()
         } else {
             binding.permission.setOnClickListener {
                 ActivityCompat.requestPermissions(
@@ -40,6 +41,7 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, R.string.strange, Toast.LENGTH_SHORT).show()
             } else {
                 startActivity(Intent(this, PartnerDetectorActivity::class.java))
+                finish()
             }
         } else {
             Toast.makeText(this, R.string.strange, Toast.LENGTH_SHORT).show()
