@@ -2,7 +2,6 @@ package org.techtown.testwebrtc
 
 import android.content.Intent
 import android.os.Bundle
-import android.provider.Settings
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -53,14 +52,14 @@ class PartnerDetectorActivity : AppCompatActivity() {
             }
 
             override fun onFailure(call: Call, e: IOException) {
-                println("checkNetwork Fail. ${e.message}")
+                println("checkNetwork Fail.")
                 runOnUiThread {
                     Toast.makeText(this@PartnerDetectorActivity, e.message, Toast.LENGTH_SHORT).show()
                     binding.phoneA.isEnabled = true
                     binding.phoneB.isEnabled = true
-                    binding.message.text = "와이파이를 껐다 켜세요"
-                    val panelIntent = Intent(Settings.Panel.ACTION_WIFI)
-                    startActivity(panelIntent)
+                    binding.message.text = "network error"
+//                    val panelIntent = Intent(Settings.Panel.ACTION_WIFI)
+//                    startActivity(panelIntent)
                 }
             }
         })

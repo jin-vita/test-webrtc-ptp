@@ -110,7 +110,10 @@ class WebRTCActivity : AppCompatActivity(), SdpObserver, PeerConnection.Observer
         val iceServer3 = PeerConnection.IceServer.builder("stun:stun.schlund.de").createIceServer()
         val iceServer4 = PeerConnection.IceServer.builder("stun:74.125.140.127:19302").createIceServer()
         val iceServer5 = PeerConnection.IceServer.builder("stun:[2A00:1450:400C:C08::7F]:19302").createIceServer()
-        val iceServers = listOf(iceServer1, iceServer2, iceServer3, iceServer4, iceServer5)
+//        val iceServers = listOf(iceServer1, iceServer2, iceServer3, iceServer4, iceServer5)
+        val iceServers = listOf(
+            PeerConnection.IceServer.builder("stun:iphone-stun.strato-iphone.de:3478").createIceServer(),
+        )
 
         val rtcConfig = PeerConnection.RTCConfiguration(iceServers)
         rtcConfig.sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN
